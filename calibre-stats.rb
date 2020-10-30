@@ -1,8 +1,13 @@
 require 'sqlite3'
+require 'optparse'
 
-def count_books
+def count_books(db_path, verbose)
 
-  db = SQLite3::Database.open "/home/carles/Biblioteca del calibre/metadata.db"
+  db = SQLite3::Database.open db_path
+
+  if verbose
+    puts("just opened #{db_path}")
+  end
 
   statement = db.prepare "SELECT distinct books.timestamp, books.title
 	FROM Books
@@ -28,7 +33,6 @@ def count_books
 end
 
 def print_books(years_to_titles)
-  years_to_titles = count_books
   total_books = 0
 
   years_to_titles.each do |year, titles|
@@ -42,5 +46,19 @@ def print_books(years_to_titles)
   puts "Total number of books: #{total_books}"
 end
 
-years_to_titles = count_books
+optparse = OptionParser.new do |opts|
+  opts.banner = "Usage. calibre-stats.rb <path_to_database_file>"
+
+  opts.on('-v', '--verbose', 'Adds verbose messages')
+end
+
+params = {}
+optparse.parse!(into: params)
+
+if ARGV.count != 1
+  puts optparse
+  exit(-1)
+end
+
+years_to_titles = count_books ARGV[0], params[:verbose]
 print_books years_to_titles
